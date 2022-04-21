@@ -1,38 +1,93 @@
-/*------------------------- Global declarations --------------------------*/
+/*-------------------------------- Imports -------------------------------*/
+import * as THREE from './modules/three.module.js';
+import { GLTFLoader } from './modules/GLTFLoader.js';
+import { OrbitControls } from './modules/OrbitControls.js';
+import { GUI } from './modules/dat.gui.module.js';
 
-let scene; // Global for the scene, initialized in the initScene function
-let sceneCamera; // Global for the camera, also intialized in the initScene function
-let sceneRenderer; // Global for the renderer, also initialized in the initScene function
+/*-------------------------------- Globals ------------------------------ */
+let scene, renderer, camera, controls;
 
 /*-------------- Main initializer function for scene object --------------*/
 
 function initScene() {
-    scene = new THREE.Scene; // Initialize the scene object using three.js's scene class
-    scene.background = new THREE.Color(0x29333B); // Set the background color to a dark off-grey using hexidecimal format
+	let params = { // Parameters that can be tweaked
+		lightColor: 0xffffff,
+		lightIntensity: 10,
+		bgColor: 0x29333b,
+		camPos: [400, 700, 400],
+		modelScale: [500, 500, 500]
+	};
 
-    sceneCamera = new THREE.PerspectiveCamera(50, (window.innerWidth/window.innerHeight), 1, 5000); // Initialize camera with FOV, aspect ratio, and clipping distances
+	scene = new THREE.Scene(); // Initialize the scene object using three.js's scene class
+	scene.background = new THREE.Color(params.bgColor); // Set the background color to a dark off-grey using hexadecimal format
 
-    ambientLighting = new THREE.AmbientLight(0xFFFEE1, 100); // Create an ambient light source with a off-yellow color and intensity of 100
-    scene.add(ambientLighting) // Add the ambient light to the existing scene
+	const gui = new GUI(); // Create a new GUI object to tweak the values of the scene
 
-    sceneRenderer = new THREE.WebGLRenderer({antialias:true}); // Initialize the WebGL renderer that will be used to render the scene with antialiasing enabled (to prevent pixelation in the output)
-    sceneRenderer.setSize(window.innerWidth,window.innerHeight); // Set the aspect ratio of the renderer to that the of the window size
+	camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 100000); // Initialize camera with FOV, aspect ratio, and clipping distances
+	// Camera initial position offsets
+	camera.position.y = params.camPos[0];
+	camera.position.x = params.camPos[1];
+	camera.position.z = params.camPos[2];
 
-    document.body.appendChild(sceneRenderer.domElement); // Add the DOM element that the renderer will use to render the scene
+	const ambientLighting = new THREE.AmbientLight(params.lightColor, 10); // Create an ambient light source 
+	scene.add(ambientLighting); // Add the ambient light to the existing scene
 
-    loadModel(scene, sceneCamera, sceneRenderer); // Run the model loader function with the scene, camera, and renderer as arguments
+	const directionalLighting = new THREE.DirectionalLight(params.lightColor, 10); // Create a directional light source
+	directionalLighting.position.set(4,0,1); // Position the directional light
+	directionalLighting.castShadow = true; // Enable shadows for the light
+	scene.add(directionalLighting); // Add the light to the scene
 
-    sceneRenderer.render(scene, sceneCamera);  // Render the scene
+	let sceneLightMenu = gui.addFolder('Scene Lighting'); // Add a menu for scene lighting
+
+	sceneLightMenu.addColor(params, 'lightColor') // Parameter to control the color of scene lighting
+	.onChange(function() { // Update the lights with new parameters on change
+		ambientLighting.color.set(params.lightColor); // Update the ambient light
+		directionalLighting.color.set(params.lightColor); // Update the directional light
+	})
+	.name('Light Color'); // Name for parameter
+
+	sceneLightMenu.add(params, 'lightIntensity', 0, 100) // Parameter to control the intensity of the lighting
+	.onChange(function() { // Update the light with new parameters upon change
+		ambientLighting.intensity = params.lightIntensity; // Update the ambient light
+		directionalLighting.intensity = params.lightIntensity; // Update the directional light
+	})
+	.name('Light Intensity'); // Name for parameter
+
+	renderer = new THREE.WebGLRenderer({ antialias: true }); // Initialize the WebGL renderer that will be used to render the scene with antialiasing enabled (to prevent pixelation in the output)
+	renderer.setSize(window.innerWidth, window.innerHeight); // Set the aspect ratio of the renderer to that the of the window size
+
+	document.body.appendChild(renderer.domElement); // Add the DOM element that the renderer will use to render the scene
+
+	controls = new OrbitControls(camera, renderer.domElement); // Add orbital controls using three.js's built-in script for orbital camera movement
+
+	let modelLoader = new GLTFLoader(); // Create the model loader object
+	modelLoader.load('./src/model/scene.gltf', function (mesh) { // Main function for loading the model from the .gltf file
+		let model = mesh.scene; // Derive the renderable model from the .gltf file
+		model.scale.set(params.modelScale[0], params.modelScale[1], params.modelScale[2]); // Scale the model according to parameters
+		scene.add(model); // Add the model to the specified scene
+		let scaleMenu = gui.addFolder('Object Scaling'); // Add a menu to scale the model
+		scaleMenu.add(model.scale, 'x', 1, 5000).name('Scale X'); // Menu scaling X
+		scaleMenu.add(model.scale, 'y', 1, 5000).name('Scale X'); // Menu scaling Y
+		scaleMenu.add(model.scale, 'z', 1, 5000).name('Scale X'); // Menu scaling Z
+		animateScene(scene, camera, renderer, controls); // Render the scene using the animate function
+	});
 }
 
-/*------------------------ Model loader for scene ------------------------*/
+/*------------------------- Animation functions --------------------------*/
 
-function loadModel(modelScene, modelCamera, modelRenderer) {
-    let modelLoader = new THREE.GLTFLoader(); // Create the model loader object
-    modelLoader.load('./model/scene.gltf', function(model){ // main function for loading the model from the .gltf file
-        modelScene.add(model.scene); // add the model to the specified scene
-    });
+function animateScene(){ // Recursive function to render animate frames within the scene
+	requestAnimationFrame(animateScene); // Request the current animation frame recursively
+	controls.update(); // Run control update routine so orbital controls work smoothly
+	renderer.render(scene, camera); // Re-render the scene for every update
 }
 
 /*--------------- Code to be executed on application start ---------------*/
-initScene();
+initScene(); // Initial the renderer and display the scene
+
+window.addEventListener( 'resize', onWindowResize, false ); // Add an event listener for resizing the window
+
+function onWindowResize(){ // Function to correct the camera aspect when the window is resized
+    camera.aspect = window.innerWidth / window.innerHeight; // Resize the camera aspect to the current window size
+    camera.updateProjectionMatrix(); // Update the camera's position matrix
+    renderer.setSize( window.innerWidth, window.innerHeight ); // Resize the renderer accordingly
+}
