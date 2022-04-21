@@ -30,10 +30,17 @@ Start the server
   Node .
 ```
 
+## Viewport Navigation
+- The mouse-wheel zooms in and out
+- Left-click allows orbitting the model
+- Right-click allows for lateral movement
 
 ## Changing the Model
 
-In order to change the model, simply place a compatible GLTF file in the folder labeled "model." Name the GLTF file "scene.gltf" and it should render the new model in the program.## Narrative
+In order to change the model, simply place a compatible GLTF file in the folder labeled "model." Name the GLTF file "scene.gltf" and it should render the new model in the program.
+
+## Narrative
+
 **What is it?** This artifact is a simplistic 3D renderer made with three.js
 (using WebGL), it is based on a project I completed for the class CS-330,
 originally written in OpenGL.
