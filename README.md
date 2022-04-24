@@ -90,9 +90,9 @@ version in comparison to the original. Some of the enhancements I came up with w
 - A better way to run the program, as the original required OpenGL to be installed and included in the system's environment variables along with various other dependencies.
 
 4. I began working on the project by first creating the boilerplate code. The files I started with were:
-- The HTML document. (index.html)
-- A stylesheet to normalize styles on different browsers. (styles.css)
-- A JS file to hold the program's main logic. (app.js)
+  - The HTML document. (index.html)
+  - A stylesheet to normalize styles on different browsers. (styles.css)
+  - A JS file to hold the program's main logic. (app.js)
 
 5. I then organize the folder structure, placing the stylesheet and program logic in a source folder.
 I also imported the model to be used as a GLTF file.
